@@ -92,6 +92,14 @@
             display: none;
         }
 
+        .btn-clear-all {
+            background-color: #21262d;
+            border: 1px solid #30363d;
+            margin-top: 8px;
+            width: 100%;
+            display: none;
+        }
+
         .section-title {
             font-size: 14px;
             font-weight: bold;
@@ -194,6 +202,7 @@
         </div>
         <p id="welcome-msg" style="display:none; color: #56d364; margin-top: 10px; font-weight: bold; margin-bottom: 5px;"></p>
         <button id="btn-reset" class="btn-reset" onclick="resetData()">Azzera i miei punti 🔄</button>
+        <button id="btn-clear-all" class="btn-clear-all" onclick="clearAllData()">Azzera l'intera classifica 🗑️</button>
     </div>
 
     <div id="main-content" style="opacity: 0.4; pointer-events: none;">
@@ -320,6 +329,7 @@
         document.getElementById('welcome-msg').innerText = `Profilo attivo: ${nameInput}`;
         document.getElementById('welcome-msg').style.display = "block";
         document.getElementById('btn-reset').style.display = "block";
+        document.getElementById('btn-clear-all').style.display = "block";
         document.getElementById('main-content').style.opacity = "1";
         document.getElementById('main-content').style.pointerEvents = "auto";
 
@@ -377,6 +387,16 @@
                 }
             });
             calculateTotal();
+        }
+    }
+
+    function clearAllData() {
+        if (!currentUser) return;
+        if (confirm("⚠️ ATTENZIONE: Sei sicura di voler cancellare TUTTA la classifica e resettare tutti i partecipanti? Questa operazione svuota il database.")) {
+            database.ref('users').remove().then(() => {
+                alert("Classifica completamente svuotata!");
+                location.reload(); // Ricarica la pagina per azzerare tutto graficamente
+            });
         }
     }
 
