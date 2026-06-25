@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FANTASUMMER 2026</title>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
+    
+    <style>
+        :root {
+            --bg-color: #0d1117;
+            --card-bg: #161b22;
+            --accent-green: #2ea44f;
+            --accent-red: #da3637;
+            --text-color: #c9d1d9;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .container {
+            max-width: 500px;
+            width: 100%;
+        }
+
+        h1 {
+            text-align: center;
+            color: #fff;
+            margin-bottom: 5px;
+            font-size: 24px;
+        }
+
+        .subtitle {
+            text-align: center;
+            font-size: 14px;
+            color: #8b949e;
+            margin-bottom: 20px;
+        }
+
+        .card {
+            background-color: var(--card-bg);
+            border: 1px solid #30363d;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+
+        .profile-input {
+            display: flex;
+            gap: 10px;
+        }
+
+        input[type="text"] {
+            flex: 1;
+            background-color: #0d1117;
+            border: 1px solid #30363d;
+            border-radius: 6px;
+            padding: 10px;
+            color: #fff;
+            font-size: 16px;
+        }
+
+        button {
+            background-color: var(--accent-green);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            padding: 10px 15px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        button:disabled {
+            background-color: #21262d;
+            color: #8b949e;
+            cursor: not-allowed;
+        }
+
+        .btn-reset {
+            background-color: var(--accent-red);
+            margin-top: 10px;
+            width: 100%;
+            display: none;
+        }
+
+        .section-title {
+            font-size: 14px;
+            font-weight: bold;
+            text-transform: uppercase;
+            color: #58a6ff;
+            margin-top: 25px;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .task-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid #21262d;
+        }
+
+        .task-info {
+            display: flex;
+            flex-direction: column;
+            max-width: 70%;
+        }
+
+        .task-name {
+            font-size: 15px;
+            color: #fff;
+        }
+
+        .task-points {
+            font-size: 12px;
+            font-weight: bold;
+            margin-top: 2px;
+        }
+
+        .points-green { color: #56d364; }
+        .points-blue { color: #58a6ff; }
+        .points-orange { color: #ff9800; }
+        .points-red { color: #f85149; }
+
+        .counter-controls {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .btn-counter {
+            background-color: #21262d;
+            border: 1px solid #30363d;
+            width: 32px;
+            height: 32px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 18px;
+            padding: 0;
+        }
+
+        .score-sticky {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: var(--accent-green);
+            color: white;
+            padding: 12px 20px;
+            border-radius: 50px;
+            font-weight: bold;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+            font-size: 16px;
+            z-index: 1000;
+        }
+
+        .leaderboard-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px;
+            border-bottom: 1px solid #21262d;
+        }
+        
+        .leaderboard-item:first-child {
+            color: #f1e05a;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>☀️ FANTASUMMER 2026</h1>
+    <div class="subtitle">Inserisci il tuo nome per iniziare</div>
+
+    <div class="card">
+        <div class="profile-input">
+            <input type="text" id="username" placeholder="Es. Leonie">
+            <button id="btn-login" onclick="login()">Accedi</button>
+        </div>
+        <p id="welcome-msg" style="display:none; color: #56d364; margin-top: 10px; font-weight: bold; margin-bottom: 5px;"></p>
+        <button id="btn-reset" class="btn-reset" onclick="resetData()">Azzera i miei punti 🔄</button>
+    </div>
+
+    <div id="main-content" style="opacity: 0.4; pointer-events: none;">
+        <div class="section-title">🟢 BONUS +5 PUNTI</div>
+        <div id="tasks-5"></div>
+
+        <div class="section-title">🔵 BONUS +10 PUNTI</div>
+        <div id="tasks-10"></div>
+
+        <div class="section-title">🟠 BONUS +20 PUNTI</div>
+        <div id="tasks-20"></div>
+
+        <div class="section-title">🔥 SUPER BONUS +50 PUNTI</div>
+        <div id="tasks-50"></div>
+
+        <div class="section-title">👑 GOD MODE +100 PUNTI</div>
+        <div id="tasks-100"></div>
+
+        <div class="section-title">🔴 MALUS & PENALITÀ</div>
+        <div id="tasks-malus"></div>
+    </div>
+
+    <div class="section-title" style="margin-top: 40px;">🏆 CLASSIFICA DI QUESTA ESTATE</div>
+    <div class="card" id="leaderboard">
+        <div style="text-align: center; color: #8b949e;">Nessun punteggio salvato.</div>
+    </div>
+</div>
+
+<div class="score-sticky" id="total-score-badge">Totale: 0</div>
+
+<script>
+    const firebaseConfig = {
+        apiKey: "AIzaSyAlhM7_izGHFugWFgVUx4ZXz5",
+        authDomain: "fantasummer-3c4a5.firebaseapp.com",
+        databaseURL: "https://fantasummer-3c4a5-default-rtdb.europe-west1.firebasedatabase.app",
+        projectId: "fantasummer-3c4a5",
+        storageBucket: "fantasummer-3c4a5.appspot.com",
+        messagingSenderId: "788818193220",
+        appId: "1:788818193220:web:02c3ccc74015"
+    };
+    
+    firebase.initializeApp(firebaseConfig);
+    const database = firebase.database();
+
+    const tasks = [
+        { id: 'libro', name: 'Leggere un libro 📚', points: 5, type: '5' },
+        { id: 'racchettoni', name: 'Racchettoni in spiaggia 🏓', points: 5, type: '5' },
+        { id: 'maschera', name: 'Maschera viso 💆‍♀️', points: 5, type: '5' },
+        { id: 'unghie', name: 'Unghie semipermanente / gel 💅', points: 5, type: '5' },
+        { id: 'fuochi', name: 'Vedere fuochi d\'artificio 🎆', points: 5, type: '5' },
+        { id: 'bowling', name: 'Bowling 🎳', points: 5, type: '5' },
+        { id: 'scherzi', name: 'Scherzi 🤪', points: 5, type: '5' },
+        
+        { id: 'bacio', name: 'Foto con gente che si bacia 📸👩‍❤️‍💋‍👨', points: 10, type: '10' },
+        { id: 'insta', name: 'Insta di un ragazzo 📱✨', points: 10, type: '10' },
+        { id: 'alba_tramonto', name: 'Alba / tramonto al mare 🌅🌊', points: 10, type: '10' },
+        { id: 'cinema', name: 'Cinema 🍿🎬', points: 10, type: '10' },
+
+        { id: 'sub', name: 'Foto sott\'acqua 🤿📸', points: 20, type: '20' },
+        { id: 'san_lorenzo', name: 'Stelle la notte di San Lorenzo 🌌🌠', points: 20, type: '20' },
+        { id: 'grigliata', name: 'Grigliata 🥩🔥', points: 20, type: '20' },
+        { id: 'pigiama', name: 'Pigiama party 🍕🛌', points: 20, type: '20' },
+        { id: 'vip', name: 'Foto con celebrità 😎🌟', points: 20, type: '20' },
+        
+        { id: 'capelli', name: 'Colorare capelli 👱‍♀️🎨', points: 50, type: '50' },
+        { id: 'stato', name: 'Andare in un altro stato ✈️', points: 50, type: '50' },
+        { id: 'falo', name: 'Assistere a un falò 🔥🍂', points: 50, type: '50' },
+        { id: 'palo_dare', name: 'Dare palo 🤷‍♀️', points: 50, type: '50' },
+        
+        { id: 'fidanzarsi', name: 'Fidanzarsi 👑❤️', points: 100, type: '100' },
+        
+        { id: 'figura', name: 'Figura di merda 💀', points: -10, type: 'malus' },
+        { id: 'palo_prendere', name: 'Prendere palo 💔🥀', points: -50, type: 'malus' }
+    ];
+
+    let currentUser = "";
+    let userScores = {}; 
+
+    function renderTasks() {
+        const containers = ['5', '10', '20', '50', '100', 'malus'];
+        containers.forEach(c => {
+            const el = document.getElementById(`tasks-${c}`);
+            if (el) el.innerHTML = "";
+        });
+
+        tasks.forEach(task => {
+            const containerId = `tasks-${task.type}`;
+            const isMalus = task.points < 0;
+            const pointsText = isMalus ? `${task.points} pt` : `+${task.points} pt`;
+            
+            let classColor = 'points-green';
+            if(task.type === '10') classColor = 'points-blue';
+            if(task.type === '20') classColor = 'points-orange';
+            if(isMalus) classColor = 'points-red';
+
+            const html = `
+                <div class="task-row">
+                    <div class="task-info">
+                        <span class="task-name">${task.name}</span>
+                        <span class="task-points ${classColor}">${pointsText}</span>
+                    </div>
+                    <div class="counter-controls">
+                        <button class="btn-counter" onclick="updateCount('${task.id}', -1)">-</button>
+                        <span id="count-${task.id}" style="font-weight:bold; min-width:20px; text-align:center;">0</span>
+                        <button class="btn-counter" onclick="updateCount('${task.id}', 1)">+</button>
+                    </div>
+                </div>
+            `;
+            if (document.getElementById(containerId)) {
+                document.getElementById(containerId).innerHTML += html;
+            }
+            userScores[task.id] = 0;
+        });
+    }
+
+    function login() {
+        const nameInput = document.getElementById('username').value.trim();
+        if(nameInput === "") return alert("Inserisci un nome valido!");
+        
+        currentUser = nameInput.toLowerCase().replace(/[^a-z0-9]/g, "");
+        
+        document.getElementById('username').disabled = true;
+        document.getElementById('btn-login').disabled = true;
+        document.getElementById('welcome-msg').innerText = `Profilo attivo: ${nameInput}`;
+        document.getElementById('welcome-msg').style.display = "block";
+        document.getElementById('btn-reset').style.display = "block";
+        document.getElementById('main-content').style.opacity = "1";
+        document.getElementById('main-content').style.pointerEvents = "auto";
+
+        database.ref('users/' + currentUser).once('value').then((snapshot) => {
+            if (snapshot.exists()) {
+                const data = snapshot.val().counts || {};
+                for(let key in data) {
+                    userScores[key] = data[key];
+                    if(document.getElementById(`count-${key}`)) {
+                        document.getElementById(`count-${key}`).innerText = data[key];
+                    }
+                }
+                calculateTotal();
+            }
+        });
+    }
+
+    function updateCount(taskId, change) {
+        if(!currentUser) return;
+        
+        let currentCount = userScores[taskId] || 0;
+        currentCount += change;
+        if(currentCount < 0) currentCount = 0;
+        
+        userScores[taskId] = currentCount;
+        document.getElementById(`count-${taskId}`).innerText = currentCount;
+        
+        calculateTotal();
+    }
+
+    function calculateTotal() {
+        let total = 0;
+        tasks.forEach(task => {
+            total += (userScores[task.id] || 0) * task.points;
+        });
+
+        document.getElementById('total-score-badge').innerText = `Totale: ${total}`;
+
+        if(currentUser) {
+            database.ref('users/' + currentUser).set({
+                name: document.getElementById('username').value.trim(),
+                totalScore: total,
+                counts: userScores
+            });
+        }
+    }
+
+    function resetData() {
+        if (!currentUser) return;
+        if (confirm("Sei sicura di voler azzerare tutti i tuoi punti? Questa azione non si può annullare.")) {
+            tasks.forEach(task => {
+                userScores[task.id] = 0;
+                if(document.getElementById(`count-${task.id}`)) {
+                    document.getElementById(`count-${task.id}`).innerText = 0;
+                }
+            });
+            calculateTotal();
+        }
+    }
+
+    database.ref('users').on('value', (snapshot) => {
+        const data = snapshot.val();
+        const leaderboardDiv = document.getElementById('leaderboard');
+        
+        if(!data || Object.keys(data).length === 0) {
+            leaderboardDiv.innerHTML = '<div style="text-align: center; color: #8b949e;">Nessun punteggio salvato.</div>';
+            return;
+        }
+
+        let userList = [];
+        for(let key in data) {
+            userList.push(data[key]);
+        }
+        userList.sort((a, b) => b.totalScore - a.totalScore);
+
+        leaderboardDiv.innerHTML = "";
+        userList.forEach((user, index) => {
+            leaderboardDiv.innerHTML += `
+                <div class="leaderboard-item">
+                    <span>${index + 1}. ${user.name}</span>
+                    <span><b>${user.totalScore} pt</b></span>
+                </div>
+            `;
+        });
+    });
+
+    renderTasks();
+</script>
+</body>
+</html>
