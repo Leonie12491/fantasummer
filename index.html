@@ -395,7 +395,7 @@
         if (confirm("⚠️ ATTENZIONE: Sei sicura di voler cancellare TUTTA la classifica e resettare tutti i partecipanti? Questa operazione svuota il database.")) {
             database.ref('users').remove().then(() => {
                 alert("Classifica completamente svuotata!");
-                location.reload(); // Ricarica la pagina per azzerare tutto graficamente
+                location.reload();
             });
         }
     }
